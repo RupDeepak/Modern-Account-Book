@@ -3,10 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>expense-tracker-form-submit</title>
+  <title>expense-tracker-app</title>
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
   <style>
-    :root {
+    :root, [data-theme="light"] {
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-full: 9999px;
       --color-bg: #f7f6f2;
       --color-surface: #f9f8f5;
       --color-border: #d4d1ca;
@@ -15,20 +26,26 @@
       --color-primary: #01696f;
       --color-primary-hover: #0c4e54;
       --color-primary-highlight: #cedcd8;
-      --space-2: 0.5rem;
-      --space-4: 1rem;
-      --space-6: 1.5rem;
-      --space-8: 2rem;
-      --radius-md: 0.5rem;
-      --radius-lg: 0.75rem;
-      --radius-full: 9999px;
+      --color-error: #a12c7b;
       --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
       --font-body: 'Satoshi', system-ui, sans-serif;
+    }
+    [data-theme="dark"] {
+      --color-bg: #171614;
+      --color-surface: #1c1b19;
+      --color-border: #393836;
+      --color-text: #cdccca;
+      --color-text-muted: #979591;
+      --color-primary: #4f98a3;
+      --color-primary-hover: #227f8b;
+      --color-primary-highlight: #313b3b;
+      --color-error: #d163a7;
+      --shadow-md: 0 6px 16px rgba(0,0,0,0.28);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      min-height: 100vh;
+      min-height: 100dvh;
       display: grid;
       place-items: center;
       padding: var(--space-6);
@@ -44,10 +61,23 @@
       padding: var(--space-8) var(--space-6);
       box-shadow: var(--shadow-md);
     }
-    h1 { margin: 0 0 var(--space-2); font-size: 2rem; }
-    p { margin: 0 0 var(--space-6); color: var(--color-text-muted); }
+    h1 {
+      margin: 0 0 var(--space-2);
+      font-size: var(--text-lg);
+      line-height: 1.2;
+    }
+    p {
+      margin: 0 0 var(--space-6);
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
     .field { margin-bottom: var(--space-4); }
-    label { display:block; margin-bottom: var(--space-2); font-weight: 700; }
+    label {
+      display: block;
+      margin-bottom: var(--space-2);
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
     input {
       width: 100%;
       min-height: 48px;
@@ -56,7 +86,12 @@
       padding: 0 var(--space-4);
       background: transparent;
       color: var(--color-text);
-      font-size: 1rem;
+      font-size: var(--text-base);
+    }
+    input:focus {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+      border-color: var(--color-primary);
     }
     button {
       width: 100%;
@@ -65,17 +100,26 @@
       border-radius: var(--radius-full);
       background: var(--color-primary);
       color: white;
-      font-size: 1.1rem;
+      font-size: var(--text-base);
       font-weight: 700;
       cursor: pointer;
     }
     button:hover { background: var(--color-primary-hover); }
+    button:disabled { opacity: 0.7; cursor: wait; }
+    .status {
+      min-height: 24px;
+      margin-top: var(--space-4);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+    .status.error { color: var(--color-error); }
     .hint {
       margin-top: var(--space-6);
-      padding: 0.9rem 1rem;
+      padding: var(--space-3) var(--space-4);
       background: var(--color-primary-highlight);
       border-radius: var(--radius-md);
-      font-size: 0.95rem;
+      font-size: var(--text-sm);
+      color: var(--color-text);
     }
   </style>
 </head>
@@ -84,7 +128,7 @@
     <h1>Expense Tracker</h1>
     <p>Enter an expense type and amount, then tap Send.</p>
 
-    <form method="POST" action="https://script.google.com/macros/s/AKfycbwrYCW7BG5uKp597unHFpxIvPVfva07u2bW_Yh8nrua0lBye1myGj3LmVQ6eNWxhETncw/exec">
+    <form id="expenseForm">
       <div class="field">
         <label for="expenseType">Expense Type</label>
         <input id="expenseType" name="expenseType" type="text" placeholder="Tea, groceries, fuel" required />
@@ -95,12 +139,75 @@
         <input id="expenseAmount" name="expenseAmount" type="number" step="0.01" placeholder="20" required />
       </div>
 
-      <button type="submit">Send</button>
+      <button id="sendBtn" type="submit">Send</button>
+      <div id="status" class="status"></div>
     </form>
 
     <div class="hint">
-      Open this file in Notepad and replace <strong>YOUR_WEB_APP_URL_HERE</strong> inside the form <strong>action</strong> with your Apps Script <strong>/exec</strong> URL.
+      Goes to google sheets directly
     </div>
   </main>
+
+  <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwrYCW7BG5uKp597unHFpxIvPVfva07u2bW_Yh8nrua0lBye1myGj3LmVQ6eNWxhETncw/exec';
+
+    const form = document.getElementById('expenseForm');
+    const statusEl = document.getElementById('status');
+    const sendBtn = document.getElementById('sendBtn');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      statusEl.textContent = '';
+      statusEl.className = 'status';
+
+      if (WEB_APP_URL === '') {
+        statusEl.textContent = 'First paste your Apps Script web app URL into the HTML code.';
+        statusEl.classList.add('error');
+        return;
+      }
+
+      const expenseType = document.getElementById('expenseType').value.trim();
+      const expenseAmount = document.getElementById('expenseAmount').value.trim();
+
+      if (!expenseType || !expenseAmount) {
+        statusEl.textContent = 'Please fill both fields.';
+        statusEl.classList.add('error');
+        return;
+      }
+
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+      statusEl.textContent = 'Sending expense...';
+
+      try {
+        const formData = new FormData();
+        formData.append('expenseType', expenseType);
+        formData.append('expenseAmount', expenseAmount);
+
+        const response = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const resultText = await response.text();
+        let result = {};
+        try { result = JSON.parse(resultText); } catch (e) {}
+
+        if (response.ok && result.success) {
+          statusEl.textContent = `Saved to ${result.month} sheet successfully.`;
+          form.reset();
+        } else {
+          statusEl.textContent = result.error || 'Something went wrong while saving.';
+          statusEl.classList.add('error');
+        }
+      } catch (error) {
+        statusEl.textContent = 'Failed to connect to Google Apps Script. Check the URL and deployment access.';
+        statusEl.classList.add('error');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+      }
+    });
+  </script>
 </body>
 </html>
